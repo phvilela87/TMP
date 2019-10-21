@@ -1,7 +1,4 @@
 # TMP
-Monitoramento de carga de caminhão
-
-# TMP
 
 Projeto da Graduação de Sistemas de Controle e Automação para Monitoramento de carga de caminhão
 
