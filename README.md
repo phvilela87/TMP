@@ -5,6 +5,7 @@ Projeto da Graduação de Sistemas de Controle e Automação para Monitoramento 
 ## Habilita/Desabilita a abertura da porta do baú através de um SW utilizando um broker MQTT
 
 truckWeight: truck weight in kg
+
 alarmStatus: 0 - Alarm OFF ; 1 - Alarm ON
 
 ### JSON template:
@@ -19,8 +20,11 @@ alarmStatus: 0 - Alarm OFF ; 1 - Alarm ON
 ## Recebe notificações sobre status de violação do sistema e peso atual do caminhão
 
 doorCommand: 0 - unlock the door ; 1 - lock the door
+
 truckWeight: truck weight in kg
+
 alarmCtrl: 0 - does nothing ; 1 - deactivate the alarm
+
 ### JSON template:
 
 ```json
