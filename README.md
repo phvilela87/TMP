@@ -12,8 +12,8 @@ alarmStatus: 0 - Alarm OFF ; 1 - Alarm ON
 
 ```json
 {
-    "truckWeight" : 565,
-    "alarmStatus  : 0
+    "truckWeight"  : 565,
+    "alarmStatus"  : 0
 }
 ```
 
@@ -21,23 +21,20 @@ alarmStatus: 0 - Alarm OFF ; 1 - Alarm ON
 
 doorCommand: 0 - unlock the door ; 1 - lock the door
 
-truckWeight: truck weight in kg
-
-alarmCtrl: 0 - does nothing ; 1 - deactivate the alarm
+alarmCtrl: 0 - does nothing ; 1 - deactivate the alarm ; 2 - Force violation alarm (buzzer ON)
 
 ### JSON template:
 
 ```json
 {
     "doorCommand" : 1,
-    "truckWeight" : 565,
-    "alarmCtrl    : 0
+    "alarmCtrl"   : 0
 }
 ```
 
 ### Additional Information 
 
-project name: Atmel Studio PRojects <br/>
+project name: TMP <br/>
 version: v0r1 <br/> 
 author: Pedro Vilela (pvilela)  
-date: 15/10/2019
+date: 20/11/2019
