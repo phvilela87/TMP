@@ -8,33 +8,33 @@
   This is the implementation of mqtt broker to interface with nodeMCU board.
   @since  VER   DATE        COMMENTS
   @since  v0r1  19/10/2019  Class creation
- */
+*/
 
 /*****************************
- *  NodeMCU pin definitions  * 
+    NodeMCU pin definitions
  *****************************
- *      D0          16       * 
- *      D1          5        *
- *      D2          4        *
- *      D3          0        *
- *      D4          2        *
- *      D5          14       *
- *      D6          12       *
- *      D7          13       *
- *      D8          15       *
- *      D9          3        * 
- *      D10         1        *
+        D0          16
+        D1          5
+        D2          4
+        D3          0
+        D4          2
+        D5          14
+        D6          12
+        D7          13
+        D8          15
+        D9          3
+        D10         1
  *****************************/
 
 /*********************************************************
- * Includes.
+   Includes.
 *********************************************************/
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
 /*********************************************************
- * Private definitions.
+   Private definitions.
 *********************************************************/
 #define DOOR_PIN            13
 #define ALARM_PIN           12
@@ -44,8 +44,8 @@
 
 #define SERIAL_BAUDRATE     115200
 
-#define WIFI_SSID           "WLL-Inatel"
-#define WIFI_PASSWORD       "inatelsemfio"   
+#define WIFI_SSID           "Obi"
+#define WIFI_PASSWORD       "Canada123"
 
 #define MQTT_SERVER         "broker.mqtt-dashboard.com"
 #define MQTT_PORT           1883
@@ -59,7 +59,7 @@
 #define BUZZER_OFF()        digitalWrite(BUZZER_PIN, LOW)
 
 /*********************************************************
- * Private types.
+   Private types.
 *********************************************************/
 WiFiClient wifiClient;
 PubSubClient client(MQTT_SERVER, MQTT_PORT, wifiClient);
@@ -73,31 +73,31 @@ typedef enum enu_BuzzerLoopControl
   BUZZER_ENABLE_VERIFY,
   BUZZER_DISABLE,
   BUZZER_IDLE,
-}tenu_BuzzerLoopControl;
+} tenu_BuzzerLoopControl;
 
 typedef struct tag_truckCtrl
 {
   uint8_t                   ucAlarmStatus;
   uint8_t                   ucDoorStatus;
-  int16_t                   iTruckWeight; 
+  uint16_t                  ulTruckWeight;
   uint8_t                   ucRxAlarmCtrl;
   uint8_t                   ucRxDoorCommand;
-  int16_t                   iRxTruckWeight; 
+  uint32_t                  ulRxTruckWeight;
   uint32_t                  ulReferenceTime;
   uint32_t                  ulCurrentTime;
   uint32_t                  ulLastMessageArrived;
   tenu_BuzzerLoopControl    enuBuzzerLoopControl;
-}ttag_truckCtrl;
+} ttag_truckCtrl;
 
 /*********************************************************
- * Private variables.
+   Private variables.
 *********************************************************/
 int8_t status = WL_IDLE_STATUS;
 
 ttag_truckCtrl  tagTruckCtrl;
 
 /*********************************************************
- * Private function prototypes.
+   Private function prototypes.
 *********************************************************/
 void setup_wifi(void);
 void callback(char* topic, unsigned char* payload, unsigned int length);
@@ -108,7 +108,7 @@ void activate_alarm(void);
 void deactivate_alarm(void);
 
 /*********************************************************
- * Private functions.
+   Private functions.
 *********************************************************/
 /**
   Main class set-up.
@@ -118,7 +118,7 @@ void deactivate_alarm(void);
     @author pvilela
     @date   20/10/2019
 */
-void setup(void) 
+void setup(void)
 {
   pinMode(DOOR_PIN, OUTPUT);
   pinMode(ALARM_PIN, OUTPUT);
@@ -126,29 +126,29 @@ void setup(void)
   pinMode(SCALE_PIN, INPUT);
   pinMode(SENSOR_PIN, INPUT_PULLUP);
 
-  digitalWrite(DOOR_PIN, LOW);
+  digitalWrite(DOOR_PIN, HIGH);
   digitalWrite(ALARM_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
-  
+
   system_init();
   unlock_door();
   deactivate_alarm();
-  
+
   Serial.begin(SERIAL_BAUDRATE);
- 
+
   delay(10);
-  
+
   setup_wifi();
   client.setServer( MQTT_SERVER, MQTT_PORT);
   client.setCallback(callback);
 
   // Connecting to MQTT Broker
-  if(client.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) 
+  if (client.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD))
   {
     Serial.println("Connected to MQTT Broker!");
     client.subscribe(MQTT_SUB_TOPIC);
   }
-  else 
+  else
   {
     Serial.println("Connection to MQTT Broker has failed...");
   }
@@ -171,7 +171,7 @@ void setup_wifi(void)
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   // Wait until the connection has been confirmed before continuing
-  while(WiFi.status() != WL_CONNECTED) 
+  while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
@@ -194,7 +194,7 @@ void setup_wifi(void)
 void reconnect(void)
 {
   status = WiFi.status();
-  if( status != WL_CONNECTED)
+  if ( status != WL_CONNECTED)
   {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED)
@@ -205,10 +205,10 @@ void reconnect(void)
     Serial.println("Connected to WiFi");
   }
 
-  while(!client.connected())
+  while (!client.connected())
   {
     Serial.println("Attempting MQTT connection...");
-    if(client.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD))
+    if (client.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD))
     {
       Serial.println("MQTT connected");
       client.subscribe(MQTT_SUB_TOPIC);
@@ -234,10 +234,10 @@ void system_init(void)
 {
   tagTruckCtrl.ucAlarmStatus = 0;
   tagTruckCtrl.ucDoorStatus = 0;
-  tagTruckCtrl.iTruckWeight = 0;
+  tagTruckCtrl.ulTruckWeight = 0;
   tagTruckCtrl.ucRxAlarmCtrl = 0;
   tagTruckCtrl.ucRxDoorCommand = 0;
-  tagTruckCtrl.iRxTruckWeight = 0; 
+  tagTruckCtrl.ulRxTruckWeight = 0;
   tagTruckCtrl.ulReferenceTime = 0;
 }
 
@@ -253,9 +253,9 @@ void send_message(void)
 {
   char tx_buffer[256];
 
-  tagTruckCtrl.iTruckWeight = get_truckWeight();
+  tagTruckCtrl.ulTruckWeight = get_truckWeight()/100;
 
-  tx_doc["truckWeight"] = tagTruckCtrl.iTruckWeight;
+  tx_doc["truckWeight"] = tagTruckCtrl.ulTruckWeight;
   tx_doc["alarmStatus"] = tagTruckCtrl.ucAlarmStatus;
   serializeJsonPretty(tx_doc, tx_buffer);
 
@@ -274,22 +274,22 @@ void send_message(void)
 */
 void lock_door(void)
 {
-  if(!tagTruckCtrl.ucDoorStatus && !read_sensor() && !tagTruckCtrl.ucAlarmStatus) 
+  if ((tagTruckCtrl.ucDoorStatus == 0) && (read_sensor() == 0) && (tagTruckCtrl.ucAlarmStatus == 0))
   {
     tagTruckCtrl.ucDoorStatus = 1;
-    digitalWrite(DOOR_PIN, HIGH);
+    digitalWrite(DOOR_PIN, LOW);
     Serial.println("Door has been locked!");
   }
-  else if(tagTruckCtrl.ucDoorStatus && !tagTruckCtrl.ucAlarmStatus)  
+  else if ((tagTruckCtrl.ucDoorStatus == 1) && (tagTruckCtrl.ucAlarmStatus == 0))
   {
     Serial.println("Door is already locked!");
   }
-  else if(!tagTruckCtrl.ucDoorStatus && read_sensor() && !tagTruckCtrl.ucAlarmStatus) 
-  { 
+  else if ((tagTruckCtrl.ucDoorStatus == 0) && (read_sensor() == 1) && (tagTruckCtrl.ucAlarmStatus == 0))
+  {
     Serial.println("Sensor Failure!");
   }
-  else 
-  { 
+  else
+  {
     Serial.println("Operation not allowed!");
   }
 }
@@ -304,19 +304,19 @@ void lock_door(void)
 */
 void unlock_door(void)
 {
-  if(tagTruckCtrl.ucDoorStatus && !tagTruckCtrl.ucAlarmStatus) 
+  if ((tagTruckCtrl.ucDoorStatus == 1) && (tagTruckCtrl.ucAlarmStatus == 0))
   {
     tagTruckCtrl.ucDoorStatus = 0;
-    digitalWrite(DOOR_PIN, LOW);
+    digitalWrite(DOOR_PIN, HIGH);
     Serial.println("Door has been unlocked!");
   }
-  else if(!tagTruckCtrl.ucDoorStatus && !tagTruckCtrl.ucAlarmStatus) 
-  { 
+  else if ((tagTruckCtrl.ucDoorStatus == 0) && (tagTruckCtrl.ucAlarmStatus == 0))
+  {
     Serial.println("Door is already unlocked!");
   }
   else
   {
-     Serial.println("Operation not allowed!");
+    Serial.println("Operation not allowed!");
   }
 }
 
@@ -328,8 +328,9 @@ void unlock_door(void)
     @author pvilela
     @date   20/10/2019
 */
-int16_t get_truckWeight(void)
+uint32_t get_truckWeight(void)
 {
+  
   return analogRead(SCALE_PIN);
 }
 
@@ -356,12 +357,11 @@ uint8_t read_sensor(void)
 */
 void verify_system(void)
 {
-  if(tagTruckCtrl.ucDoorStatus && read_sensor())
+  if ((tagTruckCtrl.ucDoorStatus == 1) && (read_sensor() == 1))
   {
-    if(!tagTruckCtrl.ucAlarmStatus) 
+    if (tagTruckCtrl.ucAlarmStatus == 0)
     {
       activate_alarm();
-      tagTruckCtrl.enuBuzzerLoopControl = BUZZER_ENABLE;
     }
   }
 }
@@ -376,10 +376,11 @@ void verify_system(void)
 */
 void activate_alarm(void)
 {
-  if(!tagTruckCtrl.ucAlarmStatus)
+  if (tagTruckCtrl.ucAlarmStatus == 0)
   {
     tagTruckCtrl.ucAlarmStatus = 1;
     send_message();
+    tagTruckCtrl.enuBuzzerLoopControl = BUZZER_ENABLE;
     digitalWrite(ALARM_PIN, HIGH);
     Serial.println("System Violation Alarm!");
   }
@@ -387,7 +388,7 @@ void activate_alarm(void)
 
 void deactivate_alarm(void)
 {
-  if(tagTruckCtrl.ucAlarmStatus)
+  if (tagTruckCtrl.ucAlarmStatus == 1)
   {
     tagTruckCtrl.ucAlarmStatus = 0;
     unlock_door();
@@ -419,7 +420,7 @@ void buzzerCtrl_processLoop(void)
       tagTruckCtrl.ulReferenceTime = millis();
       break;
     case BUZZER_ENABLE_VERIFY:
-      if((millis() - tagTruckCtrl.ulReferenceTime) > 50)
+      if ((millis() - tagTruckCtrl.ulReferenceTime) > 50)
       {
         BUZZER_OFF();
         tagTruckCtrl.enuBuzzerLoopControl = BUZZER_DISABLE;
@@ -427,9 +428,9 @@ void buzzerCtrl_processLoop(void)
       }
       break;
     case BUZZER_DISABLE:
-      if((millis() - tagTruckCtrl.ulReferenceTime) > 200)
+      if ((millis() - tagTruckCtrl.ulReferenceTime) > 200)
       {
-        if(tagTruckCtrl.ucAlarmStatus)
+        if (tagTruckCtrl.ucAlarmStatus == 1)
         {
           tagTruckCtrl.enuBuzzerLoopControl = BUZZER_ENABLE;
         }
@@ -456,22 +457,36 @@ void buzzerCtrl_processLoop(void)
 */
 void rx_message_parser(void)
 {
-  if(!tagTruckCtrl.ucRxDoorCommand && !tagTruckCtrl.ucRxAlarmCtrl) 
-  { 
+
+  if ((tagTruckCtrl.ucRxDoorCommand == 0) && (tagTruckCtrl.ucRxAlarmCtrl == 0))
+  {
     unlock_door();
   }
-  else if(tagTruckCtrl.ucRxDoorCommand && !tagTruckCtrl.ucRxAlarmCtrl) 
-  { 
+
+  else if ((tagTruckCtrl.ucRxDoorCommand == 1) && (tagTruckCtrl.ucRxAlarmCtrl == 0))
+  {
     lock_door();
   }
+
   else
   {
-    Serial.println("Operation not allowed!");
+    /* Does nothing */
   }
-  
-  if(tagTruckCtrl.ucRxAlarmCtrl) 
-  { 
+
+
+  if (tagTruckCtrl.ucRxAlarmCtrl == 1)
+  {
     deactivate_alarm();
+  }
+
+  else if (tagTruckCtrl.ucRxAlarmCtrl == 2)
+  {
+    activate_alarm();
+  }
+
+  else
+  {
+    /*  Does nothing */
   }
 }
 
@@ -483,9 +498,9 @@ void rx_message_parser(void)
     @author pvilela
     @date   20/10/2019
 */
-void loop(void) 
+void loop(void)
 {
-  if(!client.connected())
+  if (!client.connected())
   {
     reconnect();
   }
@@ -493,9 +508,9 @@ void loop(void)
 
   verify_system();
   buzzerCtrl_processLoop();
-  
+
   tagTruckCtrl.ulCurrentTime = millis();
-  if(tagTruckCtrl.ulCurrentTime - tagTruckCtrl.ulLastMessageArrived > 5000)
+  if (tagTruckCtrl.ulCurrentTime - tagTruckCtrl.ulLastMessageArrived > 5000)
   {
     send_message();
     tagTruckCtrl.ulLastMessageArrived = tagTruckCtrl.ulCurrentTime;
@@ -517,10 +532,10 @@ void callback(char* topic, unsigned char* payload, unsigned int length)
   DeserializationError err = deserializeJson(rx_doc, payload);
 
   tagTruckCtrl.ucRxDoorCommand = rx_doc["doorCommand"];
-  tagTruckCtrl.iRxTruckWeight = rx_doc["truckWeight"];
+  tagTruckCtrl.ulRxTruckWeight = rx_doc["truckWeight"];
   tagTruckCtrl.ucRxAlarmCtrl = rx_doc["alarmCtrl"];
 
-  if(err)
+  if (err)
   {
     //Serial.print("Error: ");
     //Serial.println(err.c_str());
@@ -529,7 +544,7 @@ void callback(char* topic, unsigned char* payload, unsigned int length)
 
   rx_message_parser();
 
-//Serial.println(tagTruckCtrl.ucRxDoorCommand);
-  Serial.println(tagTruckCtrl.iRxTruckWeight);
-//Serial.println(tagTruckCtrl.ucRxAlarmCtrl);
+  //Serial.println(tagTruckCtrl.ucRxDoorCommand);
+  //Serial.println(tagTruckCtrl.ulRxTruckWeight);
+  //Serial.println(tagTruckCtrl.ucRxAlarmCtrl);
 }
