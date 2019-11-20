@@ -44,8 +44,8 @@
 
 #define SERIAL_BAUDRATE     115200
 
-#define WIFI_SSID           "Obi"
-#define WIFI_PASSWORD       "Canada123"
+#define WIFI_SSID           "WLL-Inatel"
+#define WIFI_PASSWORD       "inatelsemfio"
 
 #define MQTT_SERVER         "broker.mqtt-dashboard.com"
 #define MQTT_PORT           1883
